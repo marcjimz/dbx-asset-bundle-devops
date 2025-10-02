@@ -86,15 +86,16 @@ def create_sample_data() -> DataFrame:
     countries = ["US", "UK", "CA", "AU", "DE"]
 
     for i in range(1000):
+        # Using random for sample data generation only (not security-critical)
         data.append((
             str(uuid.uuid4()),
-            random.randint(18, 80),
-            random.uniform(20000, 200000),
-            random.randint(300, 850),
-            random.uniform(100, 50000),
-            random.randint(1, 100),
-            random.randint(0, 365),
-            random.choice(countries),
+            random.randint(18, 80),  # nosec B311
+            random.uniform(20000, 200000),  # nosec B311
+            random.randint(300, 850),  # nosec B311
+            random.uniform(100, 50000),  # nosec B311
+            random.randint(1, 100),  # nosec B311
+            random.randint(0, 365),  # nosec B311
+            random.choice(countries),  # nosec B311
             datetime.now()
         ))
 
@@ -245,6 +246,7 @@ logger.info(f"Successfully wrote {features_df.count()} records to {features_tabl
 # COMMAND ----------
 
 # Calculate and display feature statistics
+# Table name comes from controlled variable, not user input
 feature_stats = spark.sql(f"""
     SELECT
         COUNT(*) as total_records,
@@ -254,7 +256,7 @@ feature_stats = spark.sql(f"""
         COUNT(CASE WHEN high_value_customer = true THEN 1 END) as high_value_customers,
         COUNT(DISTINCT country) as num_countries
     FROM {features_table}
-""")
+""")  # nosec B608
 
 logger.info("Feature statistics:")
 feature_stats.show()
