@@ -1,0 +1,203 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop, feature/* ]
+
+jobs:
+  # Security vulnerability scanning with Bandit
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install security tools
+        run: |
+          pip install bandit safety pip-audit
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r src/ -f json -o bandit-report.json || true
+          bandit -r src/ -f txt
+
+      - name: Run Safety check (known vulnerabilities)
+        run: |
+          pip install -r requirements.txt
+          safety check --json || true
+          safety check
+
+      - name: Run pip-audit
+        run: |
+          pip-audit --requirement requirements.txt || true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+
+  # Secret scanning with multiple tools
+  secret-scan:
+    name: Secret & Credential Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install detect-secrets
+        run: |
+          pip install detect-secrets
+
+      - name: Run detect-secrets scan
+        run: |
+          detect-secrets scan --all-files --force-use-all-plugins \
+            --exclude-files '\.git/.*' \
+            --exclude-files '\.pytest_cache/.*' \
+            --exclude-files '__pycache__/.*' > .secrets.baseline || true
+
+      - name: TruffleHog OSS Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Upload secrets baseline
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: secrets-baseline
+          path: .secrets.baseline
+
+  # Code quality and linting
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pylint
+
+      - name: Run Black format check
+        run: |
+          black --check src/ tests/
+
+      - name: Run Flake8
+        run: |
+          flake8 src/ tests/ --max-line-length=100 --exclude=__pycache__
+
+      - name: Run Pylint
+        run: |
+          pylint src/ --disable=C0114,C0115,C0116 || true
+
+  # Unit tests with coverage
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [security-scan, secret-scan, code-quality]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
+
+      - name: Coverage comment
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Coverage report generated. Check artifacts for detailed report."
+
+  # Databricks bundle validation
+  bundle-validation:
+    name: Validate Databricks Bundle
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Validate bundle syntax
+        run: |
+          databricks bundle validate || echo "Bundle validation requires authentication"
+
+      - name: YAML syntax check
+        run: |
+          pip install pyyaml
+          python -c "import yaml; yaml.safe_load(open('databricks.yml'))" && echo "YAML syntax valid"
+
+  # Build summary
+  ci-summary:
+    name: CI Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan, secret-scan, code-quality, unit-tests, bundle-validation]
+    if: always()
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "CI Pipeline completed"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+          echo "Secret Scan: ${{ needs.secret-scan.result }}"
+          echo "Code Quality: ${{ needs.code-quality.result }}"
+          echo "Unit Tests: ${{ needs.unit-tests.result }}"
+          echo "Bundle Validation: ${{ needs.bundle-validation.result }}"
+
+      - name: Fail if any job failed
+        if: |
+          needs.security-scan.result == 'failure' ||
+          needs.secret-scan.result == 'failure' ||
+          needs.code-quality.result == 'failure' ||
+          needs.unit-tests.result == 'failure' ||
+          needs.bundle-validation.result == 'failure'
+        run: exit 1

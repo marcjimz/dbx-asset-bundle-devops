@@ -1,0 +1,247 @@
+# Databricks Asset Bundle - MLOps Production Pipeline
+bundle:
+  name: mlops-production-pipeline
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: "Unity Catalog name for model storage"
+  schema:
+    description: "Schema name for ML artifacts"
+  model_name:
+    description: "Registered model name in Unity Catalog"
+    default: "mlops_model"
+  experiment_path:
+    description: "MLflow experiment path"
+    default: "/Shared/mlops-experiments"
+  cluster_spark_version:
+    description: "Databricks Runtime version"
+    default: "14.3.x-scala2.12"
+  cluster_node_type:
+    description: "Cluster node type"
+    default: "i3.xlarge"
+  min_workers:
+    description: "Minimum number of workers"
+    default: 1
+  max_workers:
+    description: "Maximum number of workers"
+    default: 4
+
+workspace:
+  root_path: /Workspace/${bundle.name}/${bundle.target}
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-example.cloud.databricks.com
+    variables:
+      catalog: dev_catalog
+      schema: ml_models
+      model_name: mlops_model_dev
+      experiment_path: "/Shared/mlops-experiments/dev"
+      min_workers: 1
+      max_workers: 2
+
+  stg:
+    mode: development
+    workspace:
+      host: https://adb-example.cloud.databricks.com
+    variables:
+      catalog: stg_catalog
+      schema: ml_models
+      model_name: mlops_model_stg
+      experiment_path: "/Shared/mlops-experiments/stg"
+      min_workers: 1
+      max_workers: 3
+
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-example.cloud.databricks.com
+    variables:
+      catalog: prod_catalog
+      schema: ml_models
+      model_name: mlops_model_prod
+      experiment_path: "/Shared/mlops-experiments/prod"
+      min_workers: 2
+      max_workers: 4
+
+resources:
+  jobs:
+    # Feature Engineering Job
+    feature_engineering_job:
+      name: ${bundle.target}_feature_engineering
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: "UTC"
+        pause_status: "PAUSED"
+      max_concurrent_runs: 1
+      timeout_seconds: 7200
+      tasks:
+        - task_key: prepare_features
+          notebook_task:
+            notebook_path: ./src/features/feature_engineering.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            autoscale:
+              min_workers: ${var.min_workers}
+              max_workers: ${var.max_workers}
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+            spark_conf:
+              "spark.databricks.delta.preview.enabled": "true"
+
+    # Model Training Job
+    training_job:
+      name: ${bundle.target}_model_training
+      max_concurrent_runs: 1
+      timeout_seconds: 10800
+      tasks:
+        - task_key: train_model
+          notebook_task:
+            notebook_path: ./src/training.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              experiment_path: ${var.experiment_path}
+              model_name: ${var.model_name}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            autoscale:
+              min_workers: ${var.min_workers}
+              max_workers: ${var.max_workers}
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+            spark_conf:
+              "spark.databricks.delta.preview.enabled": "true"
+
+    # Model Evaluation and Selection Job
+    evaluation_job:
+      name: ${bundle.target}_model_evaluation
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      tasks:
+        - task_key: evaluate_model
+          notebook_task:
+            notebook_path: ./src/evaluation.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              experiment_path: ${var.experiment_path}
+              model_name: ${var.model_name}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            num_workers: 1
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+
+    # Model Deployment Job
+    deployment_job:
+      name: ${bundle.target}_model_deployment
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      tasks:
+        - task_key: deploy_model
+          notebook_task:
+            notebook_path: ./src/deployment.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              environment: ${bundle.target}
+              model_name: ${var.model_name}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            num_workers: 1
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+
+    # End-to-End Pipeline Job
+    full_pipeline_job:
+      name: ${bundle.target}_full_mlops_pipeline
+      max_concurrent_runs: 1
+      timeout_seconds: 14400
+      email_notifications:
+        on_success:
+          - mlops-team@company.com
+        on_failure:
+          - mlops-team@company.com
+        no_alert_for_skipped_runs: true
+      tasks:
+        - task_key: feature_prep
+          notebook_task:
+            notebook_path: ./src/features/feature_engineering.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            autoscale:
+              min_workers: ${var.min_workers}
+              max_workers: ${var.max_workers}
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+
+        - task_key: train
+          depends_on:
+            - task_key: feature_prep
+          notebook_task:
+            notebook_path: ./src/training.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              experiment_path: ${var.experiment_path}
+              model_name: ${var.model_name}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            autoscale:
+              min_workers: ${var.min_workers}
+              max_workers: ${var.max_workers}
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+
+        - task_key: evaluate
+          depends_on:
+            - task_key: train
+          notebook_task:
+            notebook_path: ./src/evaluation.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              experiment_path: ${var.experiment_path}
+              model_name: ${var.model_name}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            num_workers: 1
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"
+
+        - task_key: deploy
+          depends_on:
+            - task_key: evaluate
+          notebook_task:
+            notebook_path: ./src/deployment.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              environment: ${bundle.target}
+              model_name: ${var.model_name}
+          new_cluster:
+            spark_version: ${var.cluster_spark_version}
+            node_type_id: ${var.cluster_node_type}
+            num_workers: 1
+            spark_env_vars:
+              PYSPARK_PYTHON: "/databricks/python3/bin/python3"

@@ -1,0 +1,43 @@
+# MLOps Resources for Databricks Asset Bundle
+# This file defines schemas and models for the MLOps pipeline
+
+resources:
+  # Unity Catalog Schema
+  schemas:
+    ml_models_schema:
+      catalog_name: ${var.catalog}
+      name: ${var.schema}
+      comment: "Schema for MLOps models, experiments, and feature tables"
+      grants:
+        - principal: "data_scientists"
+          privileges: ["USE_SCHEMA"]
+        - principal: "mlops_team"
+          privileges: ["ALL_PRIVILEGES"]
+
+  # Registered Models in Unity Catalog
+  registered_models:
+    mlops_model:
+      catalog_name: ${var.catalog}
+      schema_name: ${var.schema}
+      name: ${var.model_name}
+      comment: "MLOps production model for classification/regression tasks - managed through CI/CD pipeline"
+      grants:
+        - principal: "data_scientists"
+          privileges: ["EXECUTE"]
+        - principal: "mlops_team"
+          privileges: ["ALL_PRIVILEGES"]
+
+  # Model Serving Endpoints
+  model_serving_endpoints:
+    mlops_serving_endpoint:
+      name: "mlops-${bundle.target}-endpoint"
+      config:
+        served_entities:
+          - entity_name: "${var.catalog}.${var.schema}.${var.model_name}"
+            entity_version: "1"
+            workload_size: "Small"
+            scale_to_zero_enabled: true
+        traffic_config:
+          routes:
+            - served_model_name: "${var.catalog}.${var.schema}.${var.model_name}"
+              traffic_percentage: 100
