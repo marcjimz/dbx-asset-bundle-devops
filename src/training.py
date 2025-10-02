@@ -24,6 +24,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import json
+import tempfile
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -247,7 +249,7 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
         registered_model_name=f"{catalog}.{schema}.{model_name}"
     )
 
-    # Log confusion matrix as artifact
+    # Log confusion matrix as artifact using secure temporary file
     import matplotlib.pyplot as plt
     import seaborn as sns
 
@@ -257,17 +259,24 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
     plt.title('Confusion Matrix')
     plt.ylabel('Actual')
     plt.xlabel('Predicted')
-    plt.savefig('/tmp/confusion_matrix.png')
-    mlflow.log_artifact('/tmp/confusion_matrix.png')
+
+    # Save to secure temporary file
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+        confusion_matrix_path = f.name
+    plt.savefig(confusion_matrix_path)
+    mlflow.log_artifact(confusion_matrix_path)
     plt.close()
+    os.unlink(confusion_matrix_path)  # Clean up
 
-    # Log classification report
+    # Log classification report using secure temporary file
     class_report = classification_report(y_test, y_pred, output_dict=True)
-    with open('/tmp/classification_report.json', 'w') as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        class_report_path = f.name
         json.dump(class_report, f, indent=2)
-    mlflow.log_artifact('/tmp/classification_report.json')
+    mlflow.log_artifact(class_report_path)
+    os.unlink(class_report_path)  # Clean up
 
-    # Log feature importance plot
+    # Log feature importance plot using secure temporary file
     plt.figure(figsize=(10, 6))
     sorted_importance = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
     features, importances = zip(*sorted_importance)
@@ -275,9 +284,14 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
     plt.xlabel('Importance')
     plt.title('Feature Importance')
     plt.tight_layout()
-    plt.savefig('/tmp/feature_importance.png')
-    mlflow.log_artifact('/tmp/feature_importance.png')
+
+    # Save to secure temporary file
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+        feature_importance_path = f.name
+    plt.savefig(feature_importance_path)
+    mlflow.log_artifact(feature_importance_path)
     plt.close()
+    os.unlink(feature_importance_path)  # Clean up
 
     # Add tags
     mlflow.set_tags({

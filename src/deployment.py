@@ -20,6 +20,8 @@ from databricks.sdk.service.serving import (
 )
 import time
 import json
+import tempfile
+import os
 from datetime import datetime
 
 # Configure logging
@@ -368,8 +370,9 @@ deployment_record = {
     }
 }
 
-# Save deployment record
-with open('/tmp/deployment_record.json', 'w') as f:
+# Save deployment record using secure temporary file
+with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    deployment_record_path = f.name
     json.dump(deployment_record, f, indent=2)
 
 logger.info("Deployment record created")
@@ -378,12 +381,16 @@ logger.info("Deployment record created")
 try:
     if model_version_info and hasattr(model_version_info, 'run_id'):
         with mlflow.start_run(run_id=model_version_info.run_id):
-            mlflow.log_artifact('/tmp/deployment_record.json')
+            mlflow.log_artifact(deployment_record_path)
             mlflow.set_tag(f"deployed_to_{environment}", "true")
             mlflow.set_tag(f"endpoint_{environment}", endpoint_name)
             logger.info(f"Deployment record logged to MLflow run {model_version_info.run_id}")
 except Exception as e:
     logger.warning(f"Could not log deployment to MLflow: {e}")
+finally:
+    # Clean up temporary file
+    if os.path.exists(deployment_record_path):
+        os.unlink(deployment_record_path)
 
 # COMMAND ----------
 

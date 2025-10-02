@@ -15,6 +15,8 @@ from mlflow.entities import ViewType
 import pandas as pd
 from datetime import datetime
 import json
+import tempfile
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -352,16 +354,21 @@ evaluation_report = {
     "quality_thresholds": quality_thresholds
 }
 
-# Log evaluation report as artifact to the best run
-with mlflow.start_run(run_id=best_run.info.run_id):
-    with open('/tmp/evaluation_report.json', 'w') as f:
-        json.dump(evaluation_report, f, indent=2)
-    mlflow.log_artifact('/tmp/evaluation_report.json')
+# Log evaluation report as artifact to the best run using secure temporary file
+with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    evaluation_report_path = f.name
+    json.dump(evaluation_report, f, indent=2)
 
-    # Log validation metrics
-    mlflow.log_metric("validation_passed", 1 if validation_passed else 0)
-
-logger.info("Evaluation report saved")
+try:
+    with mlflow.start_run(run_id=best_run.info.run_id):
+        mlflow.log_artifact(evaluation_report_path)
+        # Log validation metrics
+        mlflow.log_metric("validation_passed", 1 if validation_passed else 0)
+    logger.info("Evaluation report saved")
+finally:
+    # Clean up temporary file
+    if os.path.exists(evaluation_report_path):
+        os.unlink(evaluation_report_path)
 
 # COMMAND ----------
 
