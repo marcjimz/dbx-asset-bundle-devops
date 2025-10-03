@@ -17,7 +17,7 @@ from src.utils.mlops_utils import (
     validate_model_metrics,
     calculate_data_quality_score,
     format_table_name,
-    extract_run_info
+    extract_run_info,
 )
 
 
@@ -33,6 +33,7 @@ class TestLogging:
     def test_logging_level(self):
         """Test logging level configuration"""
         import logging
+
         logger = setup_logging("test_logger", level=logging.DEBUG)
         assert logger.level == logging.DEBUG
 
@@ -42,7 +43,11 @@ class TestParameterValidation:
 
     def test_valid_parameters(self):
         """Test validation with all required parameters"""
-        params = {"catalog": "dev_catalog", "schema": "ml_models", "model": "test_model"}
+        params = {
+            "catalog": "dev_catalog",
+            "schema": "ml_models",
+            "model": "test_model",
+        }
         required = ["catalog", "schema"]
         assert validate_parameters(params, required) is True
 
@@ -221,10 +226,7 @@ class TestDataQualityScore:
     def test_perfect_quality(self):
         """Test perfect data quality"""
         score = calculate_data_quality_score(
-            total_records=1000,
-            null_count=0,
-            duplicate_count=0,
-            outlier_count=0
+            total_records=1000, null_count=0, duplicate_count=0, outlier_count=0
         )
 
         assert score == 100.0
@@ -232,10 +234,7 @@ class TestDataQualityScore:
     def test_with_issues(self):
         """Test quality with data issues"""
         score = calculate_data_quality_score(
-            total_records=1000,
-            null_count=50,
-            duplicate_count=30,
-            outlier_count=20
+            total_records=1000, null_count=50, duplicate_count=30, outlier_count=20
         )
 
         assert score == 90.0
@@ -243,10 +242,7 @@ class TestDataQualityScore:
     def test_zero_records(self):
         """Test with zero records"""
         score = calculate_data_quality_score(
-            total_records=0,
-            null_count=0,
-            duplicate_count=0,
-            outlier_count=0
+            total_records=0, null_count=0, duplicate_count=0, outlier_count=0
         )
 
         assert score == 0.0

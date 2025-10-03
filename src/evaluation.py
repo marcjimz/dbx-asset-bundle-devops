@@ -27,7 +27,9 @@ logger = logging.getLogger(__name__)
 # Get parameters
 dbutils.widgets.text("catalog", "dev_catalog", "Unity Catalog")
 dbutils.widgets.text("schema", "ml_models", "Schema Name")
-dbutils.widgets.text("experiment_path", "/Shared/mlops-experiments/dev", "MLflow Experiment Path")
+dbutils.widgets.text(
+    "experiment_path", "/Shared/mlops-experiments/dev", "MLflow Experiment Path"
+)
 dbutils.widgets.text("model_name", "mlops_model_dev", "Model Name")
 dbutils.widgets.text("metric_name", "f1_score", "Primary Metric")
 dbutils.widgets.text("min_metric_value", "0.6", "Minimum Metric Value")
@@ -73,6 +75,7 @@ logger.info(f"Using experiment: {experiment_path} (ID: {experiment_id})")
 
 # COMMAND ----------
 
+
 def get_best_run(experiment_id, metric_name, min_metric_value):
     """
     Search for the best model run based on specified metric.
@@ -94,7 +97,7 @@ def get_best_run(experiment_id, metric_name, min_metric_value):
         filter_string="",
         run_view_type=ViewType.ACTIVE_ONLY,
         max_results=100,
-        order_by=[f"metrics.{metric_name} DESC"]
+        order_by=[f"metrics.{metric_name} DESC"],
     )
 
     if not runs:
@@ -104,12 +107,13 @@ def get_best_run(experiment_id, metric_name, min_metric_value):
 
     # Filter runs by minimum metric value
     valid_runs = [
-        run for run in runs
-        if run.data.metrics.get(metric_name, 0) >= min_metric_value
+        run for run in runs if run.data.metrics.get(metric_name, 0) >= min_metric_value
     ]
 
     if not valid_runs:
-        logger.warning(f"No runs meet minimum {metric_name} threshold of {min_metric_value}")
+        logger.warning(
+            f"No runs meet minimum {metric_name} threshold of {min_metric_value}"
+        )
         logger.warning(f"Using best available run")
         valid_runs = runs
 
@@ -122,6 +126,7 @@ def get_best_run(experiment_id, metric_name, min_metric_value):
 
     return best_run, best_metrics
 
+
 # Get best run
 best_run, best_metrics = get_best_run(experiment_id, metric_name, min_metric_value)
 
@@ -131,6 +136,7 @@ best_run, best_metrics = get_best_run(experiment_id, metric_name, min_metric_val
 # MAGIC ## 3. Compare Top Models
 
 # COMMAND ----------
+
 
 def compare_top_models(experiment_id, top_n=5):
     """
@@ -151,7 +157,7 @@ def compare_top_models(experiment_id, top_n=5):
         filter_string="",
         run_view_type=ViewType.ACTIVE_ONLY,
         max_results=top_n,
-        order_by=[f"metrics.{metric_name} DESC"]
+        order_by=[f"metrics.{metric_name} DESC"],
     )
 
     # Extract metrics for comparison
@@ -160,20 +166,25 @@ def compare_top_models(experiment_id, top_n=5):
         metrics = run.data.metrics
         params = run.data.params
 
-        comparison_data.append({
-            "run_id": run.info.run_id,
-            "run_name": run.data.tags.get("mlflow.runName", "N/A"),
-            "accuracy": metrics.get("accuracy", None),
-            "precision": metrics.get("precision", None),
-            "recall": metrics.get("recall", None),
-            "f1_score": metrics.get("f1_score", None),
-            "roc_auc": metrics.get("roc_auc", None),
-            "cv_f1_mean": metrics.get("cv_f1_mean", None),
-            "start_time": datetime.fromtimestamp(run.info.start_time / 1000).isoformat()
-        })
+        comparison_data.append(
+            {
+                "run_id": run.info.run_id,
+                "run_name": run.data.tags.get("mlflow.runName", "N/A"),
+                "accuracy": metrics.get("accuracy", None),
+                "precision": metrics.get("precision", None),
+                "recall": metrics.get("recall", None),
+                "f1_score": metrics.get("f1_score", None),
+                "roc_auc": metrics.get("roc_auc", None),
+                "cv_f1_mean": metrics.get("cv_f1_mean", None),
+                "start_time": datetime.fromtimestamp(
+                    run.info.start_time / 1000
+                ).isoformat(),
+            }
+        )
 
     comparison_df = pd.DataFrame(comparison_data)
     return comparison_df
+
 
 # Compare top models
 comparison_df = compare_top_models(experiment_id, top_n=5)
@@ -186,6 +197,7 @@ print(comparison_df.to_string())
 # MAGIC ## 4. Validate Model Quality
 
 # COMMAND ----------
+
 
 def validate_model_quality(metrics, thresholds):
     """
@@ -211,25 +223,28 @@ def validate_model_quality(metrics, thresholds):
         validation_results[metric] = {
             "actual": actual_value,
             "threshold": min_value,
-            "passed": passed
+            "passed": passed,
         }
 
         if not passed:
             validation_passed = False
-            logger.warning(f"Validation failed for {metric}: {actual_value} < {min_value}")
+            logger.warning(
+                f"Validation failed for {metric}: {actual_value} < {min_value}"
+            )
         else:
-            logger.info(f"Validation passed for {metric}: {actual_value} >= {min_value}")
+            logger.info(
+                f"Validation passed for {metric}: {actual_value} >= {min_value}"
+            )
 
     return validation_passed, validation_results
 
-# Define quality thresholds
-quality_thresholds = {
-    "accuracy": 0.65,
-    "f1_score": min_metric_value,
-    "roc_auc": 0.65
-}
 
-validation_passed, validation_results = validate_model_quality(best_metrics, quality_thresholds)
+# Define quality thresholds
+quality_thresholds = {"accuracy": 0.65, "f1_score": min_metric_value, "roc_auc": 0.65}
+
+validation_passed, validation_results = validate_model_quality(
+    best_metrics, quality_thresholds
+)
 
 # COMMAND ----------
 
@@ -237,6 +252,7 @@ validation_passed, validation_results = validate_model_quality(best_metrics, qua
 # MAGIC ## 5. Register and Transition Model
 
 # COMMAND ----------
+
 
 def register_best_model(run_id, model_name, validation_passed):
     """
@@ -287,7 +303,7 @@ def register_best_model(run_id, model_name, validation_passed):
                         name=full_model_name,
                         version=pv.version,
                         stage="Archived",
-                        archive_existing_versions=False
+                        archive_existing_versions=False,
                     )
                     logger.info(f"Archived previous production version {pv.version}")
             except Exception as e:
@@ -301,35 +317,42 @@ def register_best_model(run_id, model_name, validation_passed):
                     name=full_model_name,
                     version=model_version.version,
                     stage=target_stage,
-                    archive_existing_versions=False
+                    archive_existing_versions=False,
                 )
-                logger.info(f"Transitioned model version {model_version.version} to {target_stage}")
+                logger.info(
+                    f"Transitioned model version {model_version.version} to {target_stage}"
+                )
             except Exception as e:
                 logger.warning(f"Could not transition model stage: {e}")
                 logger.info("Model is registered but stage transition skipped")
 
             # Add description
             try:
-                description = f"Model trained on {datetime.now().strftime('%Y-%m-%d')}. "
+                description = (
+                    f"Model trained on {datetime.now().strftime('%Y-%m-%d')}. "
+                )
                 description += f"F1 Score: {best_metrics.get('f1_score', 'N/A'):.4f}, "
                 description += f"Accuracy: {best_metrics.get('accuracy', 'N/A'):.4f}"
 
                 client.update_model_version(
                     name=full_model_name,
                     version=model_version.version,
-                    description=description
+                    description=description,
                 )
             except Exception as e:
                 logger.warning(f"Could not update model description: {e}")
 
         else:
-            logger.warning("Model did not pass validation - not transitioning to production")
+            logger.warning(
+                "Model did not pass validation - not transitioning to production"
+            )
 
         return model_version
 
     except Exception as e:
         logger.error(f"Error registering model: {e}")
         raise
+
 
 # Register the best model
 model_version = register_best_model(best_run.info.run_id, model_name, validation_passed)
@@ -348,14 +371,17 @@ evaluation_report = {
     "model_name": f"{catalog}.{schema}.{model_name}",
     "best_run_id": best_run.info.run_id,
     "model_version": model_version.version if model_version else None,
-    "metrics": {k: float(v) if isinstance(v, (int, float)) else v for k, v in best_metrics.items()},
+    "metrics": {
+        k: float(v) if isinstance(v, (int, float)) else v
+        for k, v in best_metrics.items()
+    },
     "validation_passed": validation_passed,
     "validation_results": validation_results,
-    "quality_thresholds": quality_thresholds
+    "quality_thresholds": quality_thresholds,
 }
 
 # Log evaluation report as artifact to the best run using secure temporary file
-with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
     evaluation_report_path = f.name
     json.dump(evaluation_report, f, indent=2)
 
@@ -403,11 +429,13 @@ print("=" * 80)
 # COMMAND ----------
 
 # Output for job orchestration
-dbutils.notebook.exit({
-    "status": "success",
-    "best_run_id": best_run.info.run_id,
-    "model_version": model_version.version if model_version else None,
-    "model_name": f"{catalog}.{schema}.{model_name}",
-    "validation_passed": validation_passed,
-    "primary_metric": best_metrics.get(metric_name, 0)
-})
+dbutils.notebook.exit(
+    {
+        "status": "success",
+        "best_run_id": best_run.info.run_id,
+        "model_version": model_version.version if model_version else None,
+        "model_name": f"{catalog}.{schema}.{model_name}",
+        "validation_passed": validation_passed,
+        "primary_metric": best_metrics.get(metric_name, 0),
+    }
+)

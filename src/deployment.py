@@ -16,7 +16,7 @@ from databricks.sdk.service.serving import (
     EndpointCoreConfigInput,
     ServedEntityInput,
     TrafficConfig,
-    Route
+    Route,
 )
 import time
 import json
@@ -83,6 +83,7 @@ logger.info("Clients initialized")
 
 # COMMAND ----------
 
+
 def get_model_version_to_deploy(model_name, version_param, environment):
     """
     Get the specific model version to deploy.
@@ -117,7 +118,9 @@ def get_model_version_to_deploy(model_name, version_param, environment):
             )
 
             if not versions:
-                logger.warning(f"No {stage} version found, using latest version instead")
+                logger.warning(
+                    f"No {stage} version found, using latest version instead"
+                )
                 versions = mlflow_client.search_model_versions(f"name='{model_name}'")
                 if not versions:
                     raise ValueError(f"No versions found for model {model_name}")
@@ -144,6 +147,7 @@ def get_model_version_to_deploy(model_name, version_param, environment):
         logger.error(f"Error getting model version: {e}")
         raise
 
+
 # Get model version to deploy
 version_to_deploy, model_version_info = get_model_version_to_deploy(
     full_model_name, model_version_param, environment
@@ -155,6 +159,7 @@ version_to_deploy, model_version_info = get_model_version_to_deploy(
 # MAGIC ## 3. Configure Serving Endpoint
 
 # COMMAND ----------
+
 
 def create_or_update_endpoint(endpoint_name, model_name, model_version, environment):
     """
@@ -203,7 +208,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
             entity_name=model_name,
             entity_version=model_version,
             workload_size=workload_size,
-            scale_to_zero_enabled=scale_to_zero_enabled
+            scale_to_zero_enabled=scale_to_zero_enabled,
         )
 
         if endpoint_exists:
@@ -214,11 +219,13 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                 name=endpoint_name,
                 served_entities=[served_entity],
                 traffic_config=TrafficConfig(
-                    routes=[Route(
-                        served_model_name=f"{model_name.split('.')[-1]}-{model_version}",
-                        traffic_percentage=100
-                    )]
-                )
+                    routes=[
+                        Route(
+                            served_model_name=f"{model_name.split('.')[-1]}-{model_version}",
+                            traffic_percentage=100,
+                        )
+                    ]
+                ),
             )
 
             logger.info(f"Endpoint update initiated")
@@ -229,9 +236,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
 
             workspace_client.serving_endpoints.create(
                 name=endpoint_name,
-                config=EndpointCoreConfigInput(
-                    served_entities=[served_entity]
-                )
+                config=EndpointCoreConfigInput(served_entities=[served_entity]),
             )
 
             logger.info(f"Endpoint creation initiated")
@@ -251,10 +256,12 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                     return {
                         "name": endpoint_name,
                         "state": endpoint_status.state.ready,
-                        "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}"
+                        "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}",
                     }
 
-                logger.info(f"Endpoint state: {endpoint_status.state.ready}. Waiting...")
+                logger.info(
+                    f"Endpoint state: {endpoint_status.state.ready}. Waiting..."
+                )
                 time.sleep(wait_interval)
                 elapsed_time += wait_interval
 
@@ -267,7 +274,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
         return {
             "name": endpoint_name,
             "state": "PENDING",
-            "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}"
+            "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}",
         }
 
     except Exception as e:
@@ -278,8 +285,9 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
             "name": endpoint_name,
             "state": "CONFIGURED",
             "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}",
-            "note": "Endpoint configuration submitted. Check Databricks console for status."
+            "note": "Endpoint configuration submitted. Check Databricks console for status.",
         }
+
 
 # Create or update endpoint
 endpoint_info = create_or_update_endpoint(
@@ -292,6 +300,7 @@ endpoint_info = create_or_update_endpoint(
 # MAGIC ## 4. Test Endpoint (Optional)
 
 # COMMAND ----------
+
 
 def test_endpoint(endpoint_name):
     """
@@ -317,29 +326,23 @@ def test_endpoint(endpoint_name):
                     "num_transactions": 45,
                     "days_since_last_transaction": 5,
                     "income_to_balance_ratio": 5.0,
-                    "transaction_frequency": 9.0
+                    "transaction_frequency": 9.0,
                 }
             ]
         }
 
         # Make prediction request
         response = workspace_client.serving_endpoints.query(
-            name=endpoint_name,
-            dataframe_records=test_data["dataframe_records"]
+            name=endpoint_name, dataframe_records=test_data["dataframe_records"]
         )
 
         logger.info(f"Test prediction successful")
-        return {
-            "status": "success",
-            "response": response
-        }
+        return {"status": "success", "response": response}
 
     except Exception as e:
         logger.warning(f"Endpoint test failed (may require time to warm up): {e}")
-        return {
-            "status": "not_tested",
-            "reason": str(e)
-        }
+        return {"status": "not_tested", "reason": str(e)}
+
 
 # Test endpoint if it's ready
 if endpoint_info.get("state") == "READY":
@@ -364,14 +367,24 @@ deployment_record = {
     "endpoint_info": endpoint_info,
     "test_results": test_results,
     "model_metadata": {
-        "run_id": model_version_info.run_id if hasattr(model_version_info, 'run_id') else None,
-        "creation_timestamp": model_version_info.creation_timestamp if hasattr(model_version_info, 'creation_timestamp') else None,
-        "current_stage": model_version_info.current_stage if hasattr(model_version_info, 'current_stage') else None
-    }
+        "run_id": (
+            model_version_info.run_id if hasattr(model_version_info, "run_id") else None
+        ),
+        "creation_timestamp": (
+            model_version_info.creation_timestamp
+            if hasattr(model_version_info, "creation_timestamp")
+            else None
+        ),
+        "current_stage": (
+            model_version_info.current_stage
+            if hasattr(model_version_info, "current_stage")
+            else None
+        ),
+    },
 }
 
 # Save deployment record using secure temporary file
-with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
     deployment_record_path = f.name
     json.dump(deployment_record, f, indent=2)
 
@@ -379,12 +392,14 @@ logger.info("Deployment record created")
 
 # Optionally log to MLflow
 try:
-    if model_version_info and hasattr(model_version_info, 'run_id'):
+    if model_version_info and hasattr(model_version_info, "run_id"):
         with mlflow.start_run(run_id=model_version_info.run_id):
             mlflow.log_artifact(deployment_record_path)
             mlflow.set_tag(f"deployed_to_{environment}", "true")
             mlflow.set_tag(f"endpoint_{environment}", endpoint_name)
-            logger.info(f"Deployment record logged to MLflow run {model_version_info.run_id}")
+            logger.info(
+                f"Deployment record logged to MLflow run {model_version_info.run_id}"
+            )
 except Exception as e:
     logger.warning(f"Could not log deployment to MLflow: {e}")
 finally:
@@ -419,12 +434,14 @@ print("=" * 80)
 # COMMAND ----------
 
 # Output for job orchestration
-dbutils.notebook.exit({
-    "status": "success",
-    "endpoint_name": endpoint_name,
-    "endpoint_state": endpoint_info.get("state", "UNKNOWN"),
-    "model_name": full_model_name,
-    "model_version": version_to_deploy,
-    "environment": environment,
-    "endpoint_url": endpoint_info.get("url", "")
-})
+dbutils.notebook.exit(
+    {
+        "status": "success",
+        "endpoint_name": endpoint_name,
+        "endpoint_state": endpoint_info.get("state", "UNKNOWN"),
+        "model_name": full_model_name,
+        "model_version": version_to_deploy,
+        "environment": environment,
+        "endpoint_url": endpoint_info.get("url", ""),
+    }
+)

@@ -24,8 +24,8 @@ def setup_logging(name: str, level: int = logging.INFO) -> logging.Logger:
     """
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     logger = logging.getLogger(name)
     return logger
@@ -65,16 +65,15 @@ def format_metrics(metrics: Dict[str, float], precision: int = 4) -> Dict[str, s
         Dictionary of formatted metric strings
     """
     return {
-        name: f"{value:.{precision}f}" if isinstance(value, (int, float)) else str(value)
+        name: (
+            f"{value:.{precision}f}" if isinstance(value, (int, float)) else str(value)
+        )
         for name, value in metrics.items()
     }
 
 
 def create_run_summary(
-    run_id: str,
-    status: str,
-    metrics: Dict[str, Any],
-    parameters: Dict[str, Any]
+    run_id: str, status: str, metrics: Dict[str, Any], parameters: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Create a standardized run summary.
@@ -93,7 +92,7 @@ def create_run_summary(
         "status": status,
         "timestamp": datetime.now().isoformat(),
         "metrics": metrics,
-        "parameters": parameters
+        "parameters": parameters,
     }
 
 
@@ -105,7 +104,7 @@ def save_artifact(data: Dict[str, Any], filepath: str) -> None:
         data: Dictionary to save
         filepath: Path to save the artifact
     """
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         json.dump(data, f, indent=2, default=str)
 
 
@@ -119,7 +118,7 @@ def load_artifact(filepath: str) -> Dict[str, Any]:
     Returns:
         Loaded dictionary
     """
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         return json.load(f)
 
 
@@ -146,14 +145,12 @@ def get_environment_config(catalog: str) -> Dict[str, Any]:
     return {
         "environment": environment,
         "log_level": log_level,
-        "is_production": environment == "prod"
+        "is_production": environment == "prod",
     }
 
 
 def create_notification_message(
-    title: str,
-    status: str,
-    details: Optional[Dict[str, Any]] = None
+    title: str, status: str, details: Optional[Dict[str, Any]] = None
 ) -> str:
     """
     Create standardized notification message.
@@ -166,12 +163,7 @@ def create_notification_message(
     Returns:
         Formatted notification message
     """
-    status_emoji = {
-        "success": "✅",
-        "failed": "❌",
-        "warning": "⚠️",
-        "info": "ℹ️"
-    }
+    status_emoji = {"success": "✅", "failed": "❌", "warning": "⚠️", "info": "ℹ️"}
 
     emoji = status_emoji.get(status.lower(), "")
     message = f"{emoji} {title}\n"
@@ -187,8 +179,7 @@ def create_notification_message(
 
 
 def validate_model_metrics(
-    metrics: Dict[str, float],
-    thresholds: Dict[str, float]
+    metrics: Dict[str, float], thresholds: Dict[str, float]
 ) -> tuple[bool, List[str]]:
     """
     Validate model metrics against thresholds.
@@ -216,10 +207,7 @@ def validate_model_metrics(
 
 
 def calculate_data_quality_score(
-    total_records: int,
-    null_count: int,
-    duplicate_count: int,
-    outlier_count: int
+    total_records: int, null_count: int, duplicate_count: int, outlier_count: int
 ) -> float:
     """
     Calculate data quality score.

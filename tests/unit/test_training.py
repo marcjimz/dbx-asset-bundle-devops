@@ -12,10 +12,7 @@ class TestTrainingPipeline:
     def test_parameter_validation(self):
         """Test that training parameters are validated correctly"""
         # Test valid parameters
-        valid_params = {
-            "catalog": "dev_catalog",
-            "schema": "ml_models"
-        }
+        valid_params = {"catalog": "dev_catalog", "schema": "ml_models"}
         assert valid_params["catalog"] is not None
         assert valid_params["schema"] is not None
         assert isinstance(valid_params["catalog"], str)
@@ -33,7 +30,7 @@ class TestTrainingPipeline:
         expected_path = f"/Shared/mlops-example/{catalog}"
         assert expected_path == "/Shared/mlops-example/dev_catalog"
 
-    @patch('mlflow.start_run')
+    @patch("mlflow.start_run")
     def test_mlflow_run_logging(self, mock_start_run):
         """Test that MLflow run logs parameters and metrics correctly"""
         # Mock MLflow run
@@ -66,11 +63,14 @@ class TestTrainingPipeline:
         assert model_name is not None
         assert len(model_name) > 0
 
-    @pytest.mark.parametrize("catalog,schema", [
-        ("dev_catalog", "ml_models"),
-        ("stg_catalog", "ml_models"),
-        ("prod_catalog", "ml_models")
-    ])
+    @pytest.mark.parametrize(
+        "catalog,schema",
+        [
+            ("dev_catalog", "ml_models"),
+            ("stg_catalog", "ml_models"),
+            ("prod_catalog", "ml_models"),
+        ],
+    )
     def test_multi_environment_configuration(self, catalog, schema):
         """Test training works across different environments"""
         assert catalog in ["dev_catalog", "stg_catalog", "prod_catalog"]
@@ -106,11 +106,7 @@ class TestModelConfiguration:
 
     def test_hyperparameter_validation(self):
         """Test hyperparameter values are valid"""
-        hyperparams = {
-            "max_depth": 10,
-            "n_estimators": 100,
-            "learning_rate": 0.1
-        }
+        hyperparams = {"max_depth": 10, "n_estimators": 100, "learning_rate": 0.1}
 
         assert hyperparams["max_depth"] > 0
         assert hyperparams["n_estimators"] > 0

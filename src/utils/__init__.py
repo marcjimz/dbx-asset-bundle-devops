@@ -16,7 +16,7 @@ from .mlops_utils import (
     validate_model_metrics,
     calculate_data_quality_score,
     format_table_name,
-    extract_run_info
+    extract_run_info,
 )
 
 __all__ = [
@@ -31,5 +31,5 @@ __all__ = [
     "validate_model_metrics",
     "calculate_data_quality_score",
     "format_table_name",
-    "extract_run_info"
+    "extract_run_info",
 ]

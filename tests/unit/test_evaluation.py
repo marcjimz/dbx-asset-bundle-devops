@@ -20,7 +20,7 @@ class TestModelSelection:
         model_metrics = [
             {"run_id": "run1", "accuracy": 0.85, "f1_score": 0.82},
             {"run_id": "run2", "accuracy": 0.88, "f1_score": 0.85},
-            {"run_id": "run3", "accuracy": 0.83, "f1_score": 0.80}
+            {"run_id": "run3", "accuracy": 0.83, "f1_score": 0.80},
         ]
 
         # Best model should be run2 with highest accuracy
@@ -35,15 +35,22 @@ class TestModelSelection:
 
         with pytest.raises(ValueError):
             if model_accuracy < minimum_accuracy:
-                raise ValueError(f"Model accuracy {model_accuracy} below threshold {minimum_accuracy}")
+                raise ValueError(
+                    f"Model accuracy {model_accuracy} below threshold {minimum_accuracy}"
+                )
 
-    @pytest.mark.parametrize("metric_name,metric_value,expected_valid", [
-        ("accuracy", 0.85, True),
-        ("accuracy", 0.50, False),
-        ("f1_score", 0.90, True),
-        ("f1_score", 0.60, False)
-    ])
-    def test_metric_validation_thresholds(self, metric_name, metric_value, expected_valid):
+    @pytest.mark.parametrize(
+        "metric_name,metric_value,expected_valid",
+        [
+            ("accuracy", 0.85, True),
+            ("accuracy", 0.50, False),
+            ("f1_score", 0.90, True),
+            ("f1_score", 0.60, False),
+        ],
+    )
+    def test_metric_validation_thresholds(
+        self, metric_name, metric_value, expected_valid
+    ):
         """Test various metric validation thresholds"""
         threshold = 0.70
         is_valid = metric_value >= threshold
@@ -74,7 +81,7 @@ class TestModelRegistration:
         model_tags = {
             "environment": "dev",
             "model_type": "classifier",
-            "training_date": "2025-10-02"
+            "training_date": "2025-10-02",
         }
 
         for tag in required_tags:
@@ -86,11 +93,10 @@ class TestModelRegistration:
         alias = f"{environment}_champion"
         assert alias == "dev_champion"
 
-    @pytest.mark.parametrize("environment,expected_alias", [
-        ("dev", "dev_champion"),
-        ("stg", "stg_champion"),
-        ("prod", "prod_champion")
-    ])
+    @pytest.mark.parametrize(
+        "environment,expected_alias",
+        [("dev", "dev_champion"), ("stg", "stg_champion"), ("prod", "prod_champion")],
+    )
     def test_environment_specific_aliases(self, environment, expected_alias):
         """Test aliases are correctly formed for each environment"""
         alias = f"{environment}_champion"
@@ -100,12 +106,12 @@ class TestModelRegistration:
 class TestExperimentTracking:
     """Test cases for MLflow experiment tracking"""
 
-    @patch('mlflow.search_runs')
+    @patch("mlflow.search_runs")
     def test_search_runs_filters(self, mock_search_runs):
         """Test that runs are filtered correctly"""
         mock_search_runs.return_value = [
             {"run_id": "run1", "metrics.accuracy": 0.85},
-            {"run_id": "run2", "metrics.accuracy": 0.88}
+            {"run_id": "run2", "metrics.accuracy": 0.88},
         ]
 
         runs = mock_search_runs()
@@ -126,7 +132,7 @@ class TestExperimentTracking:
         experiment_metadata = {
             "name": "/Shared/mlops-example/dev_catalog",
             "artifact_location": "dbfs:/databricks/mlflow",
-            "lifecycle_stage": "active"
+            "lifecycle_stage": "active",
         }
 
         assert experiment_metadata["name"] is not None
@@ -146,17 +152,14 @@ class TestModelValidation:
         """Test model input schema is defined"""
         input_schema = {
             "features": ["feature1", "feature2", "feature3"],
-            "types": ["float", "float", "float"]
+            "types": ["float", "float", "float"],
         }
 
         assert len(input_schema["features"]) == len(input_schema["types"])
 
     def test_model_output_schema(self):
         """Test model output schema is defined"""
-        output_schema = {
-            "predictions": "float",
-            "probabilities": "array<float>"
-        }
+        output_schema = {"predictions": "float", "probabilities": "array<float>"}
 
         assert "predictions" in output_schema
 

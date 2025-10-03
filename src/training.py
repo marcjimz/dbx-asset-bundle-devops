@@ -17,8 +17,13 @@ from pyspark.sql.functions import col
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, confusion_matrix, classification_report
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix,
+    classification_report,
 )
 import pandas as pd
 import numpy as np
@@ -36,7 +41,9 @@ logger = logging.getLogger(__name__)
 # Get parameters
 dbutils.widgets.text("catalog", "dev_catalog", "Unity Catalog")
 dbutils.widgets.text("schema", "ml_models", "Schema Name")
-dbutils.widgets.text("experiment_path", "/Shared/mlops-experiments/dev", "MLflow Experiment Path")
+dbutils.widgets.text(
+    "experiment_path", "/Shared/mlops-experiments/dev", "MLflow Experiment Path"
+)
 dbutils.widgets.text("model_name", "mlops_model_dev", "Model Name")
 
 catalog = dbutils.widgets.get("catalog")
@@ -83,7 +90,9 @@ except Exception as e:
 
 # Show sample data
 logger.info("Sample features:")
-features_df.select("customer_id", "age", "income", "credit_score", "high_value_customer").show(5)
+features_df.select(
+    "customer_id", "age", "income", "credit_score", "high_value_customer"
+).show(5)
 
 # COMMAND ----------
 
@@ -91,6 +100,7 @@ features_df.select("customer_id", "age", "income", "credit_score", "high_value_c
 # MAGIC ## 3. Prepare Training Data
 
 # COMMAND ----------
+
 
 def prepare_training_data(df):
     """
@@ -107,9 +117,14 @@ def prepare_training_data(df):
 
     # Select feature columns
     feature_columns = [
-        "age", "income", "credit_score", "account_balance",
-        "num_transactions", "days_since_last_transaction",
-        "income_to_balance_ratio", "transaction_frequency"
+        "age",
+        "income",
+        "credit_score",
+        "account_balance",
+        "num_transactions",
+        "days_since_last_transaction",
+        "income_to_balance_ratio",
+        "transaction_frequency",
     ]
 
     # Target variable
@@ -130,6 +145,7 @@ def prepare_training_data(df):
 
     return X, y, feature_columns
 
+
 X, y, feature_columns = prepare_training_data(features_df)
 
 # COMMAND ----------
@@ -138,6 +154,7 @@ X, y, feature_columns = prepare_training_data(features_df)
 # MAGIC ## 4. Train Model with MLflow Tracking
 
 # COMMAND ----------
+
 
 def train_model(X, y, feature_names):
     """
@@ -169,7 +186,7 @@ def train_model(X, y, feature_names):
         "min_samples_split": 5,
         "min_samples_leaf": 2,
         "random_state": 42,
-        "n_jobs": -1
+        "n_jobs": -1,
     }
 
     # Train model
@@ -190,11 +207,11 @@ def train_model(X, y, feature_names):
         "f1_score": f1_score(y_test, y_pred, zero_division=0),
         "roc_auc": roc_auc_score(y_test, y_pred_proba),
         "train_size": len(X_train),
-        "test_size": len(X_test)
+        "test_size": len(X_test),
     }
 
     # Cross-validation score
-    cv_scores = cross_val_score(model, X_train, y_train, cv=5, scoring='f1')
+    cv_scores = cross_val_score(model, X_train, y_train, cv=5, scoring="f1")
     metrics["cv_f1_mean"] = cv_scores.mean()
     metrics["cv_f1_std"] = cv_scores.std()
 
@@ -202,13 +219,25 @@ def train_model(X, y, feature_names):
 
     # Feature importance
     feature_importance = dict(zip(feature_names, model.feature_importances_))
-    logger.info(f"Top 5 important features: {sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)[:5]}")
+    logger.info(
+        f"Top 5 important features: {sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)[:5]}"
+    )
 
-    return model, metrics, X_test, y_test, y_pred, y_pred_proba, feature_importance, params
+    return (
+        model,
+        metrics,
+        X_test,
+        y_test,
+        y_pred,
+        y_pred_proba,
+        feature_importance,
+        params,
+    )
+
 
 # Train the model
-model, metrics, X_test, y_test, y_pred, y_pred_proba, feature_importance, params = train_model(
-    X, y, feature_columns
+model, metrics, X_test, y_test, y_pred, y_pred_proba, feature_importance, params = (
+    train_model(X, y, feature_columns)
 )
 
 # COMMAND ----------
@@ -219,7 +248,9 @@ model, metrics, X_test, y_test, y_pred, y_pred_proba, feature_importance, params
 # COMMAND ----------
 
 # Start MLflow run
-with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}") as run:
+with mlflow.start_run(
+    run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+) as run:
     run_id = run.info.run_id
     logger.info(f"MLflow Run ID: {run_id}")
 
@@ -246,7 +277,7 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
         artifact_path="model",
         signature=signature,
         input_example=X.head(5),
-        registered_model_name=f"{catalog}.{schema}.{model_name}"
+        registered_model_name=f"{catalog}.{schema}.{model_name}",
     )
 
     # Log confusion matrix as artifact using secure temporary file
@@ -255,13 +286,13 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
 
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-    plt.title('Confusion Matrix')
-    plt.ylabel('Actual')
-    plt.xlabel('Predicted')
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.title("Confusion Matrix")
+    plt.ylabel("Actual")
+    plt.xlabel("Predicted")
 
     # Save to secure temporary file
-    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         confusion_matrix_path = f.name
     plt.savefig(confusion_matrix_path)
     mlflow.log_artifact(confusion_matrix_path)
@@ -270,7 +301,7 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
 
     # Log classification report using secure temporary file
     class_report = classification_report(y_test, y_pred, output_dict=True)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         class_report_path = f.name
         json.dump(class_report, f, indent=2)
     mlflow.log_artifact(class_report_path)
@@ -278,15 +309,17 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
 
     # Log feature importance plot using secure temporary file
     plt.figure(figsize=(10, 6))
-    sorted_importance = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
+    sorted_importance = sorted(
+        feature_importance.items(), key=lambda x: x[1], reverse=True
+    )
     features, importances = zip(*sorted_importance)
     plt.barh(features, importances)
-    plt.xlabel('Importance')
-    plt.title('Feature Importance')
+    plt.xlabel("Importance")
+    plt.title("Feature Importance")
     plt.tight_layout()
 
     # Save to secure temporary file
-    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         feature_importance_path = f.name
     plt.savefig(feature_importance_path)
     mlflow.log_artifact(feature_importance_path)
@@ -294,12 +327,14 @@ with mlflow.start_run(run_name=f"training_{datetime.now().strftime('%Y%m%d_%H%M%
     os.unlink(feature_importance_path)  # Clean up
 
     # Add tags
-    mlflow.set_tags({
-        "model_type": "RandomForestClassifier",
-        "environment": catalog.replace("_catalog", ""),
-        "use_case": "customer_value_prediction",
-        "training_date": datetime.now().isoformat()
-    })
+    mlflow.set_tags(
+        {
+            "model_type": "RandomForestClassifier",
+            "environment": catalog.replace("_catalog", ""),
+            "use_case": "customer_value_prediction",
+            "training_date": datetime.now().isoformat(),
+        }
+    )
 
     logger.info(f"Model logged successfully to run {run_id}")
 
@@ -322,18 +357,22 @@ for metric, value in metrics.items():
     print(f"  {metric}: {value:.4f}")
 print("-" * 80)
 print("TOP FEATURES:")
-for feature, importance in sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)[:5]:
+for feature, importance in sorted(
+    feature_importance.items(), key=lambda x: x[1], reverse=True
+)[:5]:
     print(f"  {feature}: {importance:.4f}")
 print("=" * 80)
 
 # COMMAND ----------
 
 # Output for job orchestration
-dbutils.notebook.exit({
-    "status": "success",
-    "run_id": run_id,
-    "model_name": f"{catalog}.{schema}.{model_name}",
-    "accuracy": metrics["accuracy"],
-    "f1_score": metrics["f1_score"],
-    "experiment_path": experiment_path
-})
+dbutils.notebook.exit(
+    {
+        "status": "success",
+        "run_id": run_id,
+        "model_name": f"{catalog}.{schema}.{model_name}",
+        "accuracy": metrics["accuracy"],
+        "f1_score": metrics["f1_score"],
+        "experiment_path": experiment_path,
+    }
+)

@@ -22,7 +22,7 @@ class TestPipelineConfiguration:
             "src/training.py",
             "src/evaluation.py",
             "src/deployment.py",
-            "src/features/feature_engineering.py"
+            "src/features/feature_engineering.py",
         ]
 
         for filepath in required_files:
@@ -39,7 +39,7 @@ class TestFeatureEngineering:
 
     def test_feature_engineering_structure(self):
         """Test feature engineering script structure"""
-        with open("src/features/feature_engineering.py", 'r') as f:
+        with open("src/features/feature_engineering.py", "r") as f:
             content = f.read()
 
             # Check for key components
@@ -50,7 +50,7 @@ class TestFeatureEngineering:
 
     def test_feature_validation_logic(self):
         """Test feature validation is included"""
-        with open("src/features/feature_engineering.py", 'r') as f:
+        with open("src/features/feature_engineering.py", "r") as f:
             content = f.read()
             assert "validate_features" in content or "validation" in content.lower()
 
@@ -60,7 +60,7 @@ class TestModelTraining:
 
     def test_training_structure(self):
         """Test training script structure"""
-        with open("src/training.py", 'r') as f:
+        with open("src/training.py", "r") as f:
             content = f.read()
 
             # Check for key components
@@ -70,13 +70,13 @@ class TestModelTraining:
 
     def test_mlflow_logging_present(self):
         """Test MLflow logging is implemented"""
-        with open("src/training.py", 'r') as f:
+        with open("src/training.py", "r") as f:
             content = f.read()
             assert "mlflow.log_param" in content or "mlflow.log_metric" in content
 
     def test_model_registration(self):
         """Test model registration logic is present"""
-        with open("src/training.py", 'r') as f:
+        with open("src/training.py", "r") as f:
             content = f.read()
             assert "registered_model_name" in content or "register" in content.lower()
 
@@ -86,7 +86,7 @@ class TestModelEvaluation:
 
     def test_evaluation_structure(self):
         """Test evaluation script structure"""
-        with open("src/evaluation.py", 'r') as f:
+        with open("src/evaluation.py", "r") as f:
             content = f.read()
 
             # Check for key components
@@ -95,13 +95,13 @@ class TestModelEvaluation:
 
     def test_model_selection_logic(self):
         """Test model selection logic is present"""
-        with open("src/evaluation.py", 'r') as f:
+        with open("src/evaluation.py", "r") as f:
             content = f.read()
             assert "best" in content.lower() or "select" in content.lower()
 
     def test_validation_checks(self):
         """Test validation checks are implemented"""
-        with open("src/evaluation.py", 'r') as f:
+        with open("src/evaluation.py", "r") as f:
             content = f.read()
             assert "validate" in content.lower() or "threshold" in content.lower()
 
@@ -111,7 +111,7 @@ class TestModelDeployment:
 
     def test_deployment_structure(self):
         """Test deployment script structure"""
-        with open("src/deployment.py", 'r') as f:
+        with open("src/deployment.py", "r") as f:
             content = f.read()
 
             # Check for key components
@@ -120,7 +120,7 @@ class TestModelDeployment:
 
     def test_environment_handling(self):
         """Test environment handling in deployment"""
-        with open("src/deployment.py", 'r') as f:
+        with open("src/deployment.py", "r") as f:
             content = f.read()
             assert "environment" in content.lower()
 
@@ -130,7 +130,7 @@ class TestCIPipeline:
 
     def test_ci_workflow_structure(self):
         """Test CI workflow has required jobs"""
-        with open(".github/workflows/ci.yml", 'r') as f:
+        with open(".github/workflows/ci.yml", "r") as f:
             content = f.read()
 
             # Check for required CI jobs
@@ -141,16 +141,18 @@ class TestCIPipeline:
 
     def test_security_scanning(self):
         """Test security scanning is configured"""
-        with open(".github/workflows/ci.yml", 'r') as f:
+        with open(".github/workflows/ci.yml", "r") as f:
             content = f.read()
             assert "bandit" in content.lower()
             assert "safety" in content.lower()
 
     def test_secret_scanning(self):
         """Test secret scanning is configured"""
-        with open(".github/workflows/ci.yml", 'r') as f:
+        with open(".github/workflows/ci.yml", "r") as f:
             content = f.read()
-            assert "detect-secrets" in content.lower() or "trufflehog" in content.lower()
+            assert (
+                "detect-secrets" in content.lower() or "trufflehog" in content.lower()
+            )
 
 
 class TestCDPipeline:
@@ -158,7 +160,7 @@ class TestCDPipeline:
 
     def test_cd_workflow_structure(self):
         """Test CD workflow has deployment stages"""
-        with open(".github/workflows/cd.yml", 'r') as f:
+        with open(".github/workflows/cd.yml", "r") as f:
             content = f.read()
 
             # Check for deployment stages
@@ -168,14 +170,14 @@ class TestCDPipeline:
 
     def test_environment_gates(self):
         """Test approval gates are configured"""
-        with open(".github/workflows/cd.yml", 'r') as f:
+        with open(".github/workflows/cd.yml", "r") as f:
             content = f.read()
             assert "environment:" in content
             assert "staging" in content or "production" in content
 
     def test_release_trigger(self):
         """Test CD triggers on version tags"""
-        with open(".github/workflows/cd.yml", 'r') as f:
+        with open(".github/workflows/cd.yml", "r") as f:
             content = f.read()
             assert "tags:" in content
             assert "v*.*.*" in content
@@ -186,7 +188,7 @@ class TestDatabricksConfiguration:
 
     def test_bundle_structure(self):
         """Test bundle configuration structure"""
-        with open("databricks.yml", 'r') as f:
+        with open("databricks.yml", "r") as f:
             content = f.read()
 
             # Check for key sections
@@ -197,7 +199,7 @@ class TestDatabricksConfiguration:
 
     def test_environment_targets(self):
         """Test all environment targets are defined"""
-        with open("databricks.yml", 'r') as f:
+        with open("databricks.yml", "r") as f:
             content = f.read()
             assert "dev:" in content
             assert "stg:" in content
@@ -205,7 +207,7 @@ class TestDatabricksConfiguration:
 
     def test_job_definitions(self):
         """Test job definitions are present"""
-        with open("databricks.yml", 'r') as f:
+        with open("databricks.yml", "r") as f:
             content = f.read()
             assert "training_job" in content
             assert "evaluation_job" in content
@@ -221,7 +223,7 @@ class TestUtilities:
 
     def test_utility_functions(self):
         """Test utility functions are defined"""
-        with open("src/utils/mlops_utils.py", 'r') as f:
+        with open("src/utils/mlops_utils.py", "r") as f:
             content = f.read()
             assert "def " in content  # Has function definitions
 
@@ -258,6 +260,7 @@ class TestSmokeTests:
             import pytest
             import json
             import os
+
             assert True
         except ImportError:
             pytest.fail("Required imports failed")
@@ -267,7 +270,7 @@ class TestSmokeTests:
         import yaml
 
         # Test YAML is valid
-        with open("databricks.yml", 'r') as f:
+        with open("databricks.yml", "r") as f:
             config = yaml.safe_load(f)
             assert config is not None
             assert "bundle" in config
