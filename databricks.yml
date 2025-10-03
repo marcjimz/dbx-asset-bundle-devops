@@ -1,17 +1,13 @@
 # Databricks Asset Bundle - MLOps Production Pipeline
 bundle:
-  name: mlops-production-pipeline${var.branch_suffix}
+  # Use BUNDLE_NAME environment variable for branch isolation
+  # Set via: export BUNDLE_NAME=mlops-production-pipeline-feature-name
+  name: mlops-production-pipeline
 
 include:
   - resources/*.yml
 
 variables:
-  branch_suffix:
-    description: "Branch-based suffix for bundle isolation (e.g., -feature-auth)"
-    default: ""
-  workspace_host:
-    description: "Databricks workspace URL"
-    default: "https://adb-example.cloud.databricks.com"
   catalog:
     description: "Unity Catalog name for model storage"
   schema:
@@ -42,8 +38,8 @@ targets:
   dev:
     mode: development
     default: true
-    workspace:
-      host: ${var.workspace_host}
+    # workspace.host uses DATABRICKS_HOST environment variable
+    # Set via: export DATABRICKS_HOST=https://adb-example.cloud.databricks.com
     variables:
       catalog: dev_catalog
       schema: ml_models
@@ -54,8 +50,7 @@ targets:
 
   stg:
     mode: development
-    workspace:
-      host: ${var.workspace_host}
+    # workspace.host uses DATABRICKS_HOST environment variable
     variables:
       catalog: stg_catalog
       schema: ml_models
@@ -66,8 +61,7 @@ targets:
 
   prod:
     mode: production
-    workspace:
-      host: ${var.workspace_host}
+    # workspace.host uses DATABRICKS_HOST environment variable
     variables:
       catalog: prod_catalog
       schema: ml_models
