@@ -1,0 +1,26 @@
+security:
+  ignore-vulnerabilities:
+    71579:
+      reason: MLflow CVE-2024-37060 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71693:
+      reason: MLflow CVE-2024-37055 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71584:
+      reason: MLflow CVE-2024-37056 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71692:
+      reason: MLflow CVE-2024-37057 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71578:
+      reason: MLflow CVE-2024-37053 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71577:
+      reason: MLflow CVE-2024-37052 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71691:
+      reason: MLflow CVE-2024-37059 - accepted risk in controlled environment
+      expires: '2025-12-31'
+    71587:
+      reason: MLflow CVE-2024-37054 - accepted risk in controlled environment
+      expires: '2025-12-31'
