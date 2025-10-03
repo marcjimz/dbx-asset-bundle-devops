@@ -1,7 +1,5 @@
 # Databricks Asset Bundle - MLOps Production Pipeline
 bundle:
-  # Use BUNDLE_NAME environment variable for branch isolation
-  # Set via: export BUNDLE_NAME=mlops-production-pipeline-feature-name
   name: mlops-production-pipeline
 
 include:

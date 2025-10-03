@@ -200,46 +200,24 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
-      - name: Prepare branch-specific bundle config
-        id: branch
+      - name: Configure Databricks authentication
         run: |
-          # Get branch name and sanitize it for Databricks
-          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
-          SANITIZED=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | cut -c1-30)
+          # Create .databrickscfg file for authentication
+          cat > ~/.databrickscfg << EOF
+          [DEFAULT]
+          host = ${{ secrets.DATABRICKS_HOST }}
+          token = ${{ secrets.DATABRICKS_TOKEN }}
+          EOF
 
-          # Only add suffix for feature branches (not main/develop)
-          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "develop" ]]; then
-            BUNDLE_NAME="mlops-production-pipeline"
-          else
-            BUNDLE_NAME="mlops-production-pipeline-${SANITIZED}"
-          fi
-
-          echo "bundle_name=${BUNDLE_NAME}" >> $GITHUB_OUTPUT
-          echo "📦 Bundle name: ${BUNDLE_NAME}"
-
-          # Temporarily update bundle name in databricks.yml for validation
-          # This only affects the CI runner, not the committed file
-          sed -i.bak "s/name: mlops-production-pipeline$/name: ${BUNDLE_NAME}/" databricks.yml
-          echo "✏️  Updated databricks.yml with branch-specific name"
+          chmod 600 ~/.databrickscfg
+          echo "✅ Databricks CLI configured"
 
       - name: Validate bundle with authentication
         run: |
-          # DATABRICKS_HOST and DATABRICKS_TOKEN are already set in job env
-          # databricks.yml has been modified with branch-specific name
-
           # Validate bundle for dev target
           databricks bundle validate --target dev
 
-          echo "✅ Bundle validated: ${{ steps.branch.outputs.bundle_name }}"
-
-      - name: Restore original databricks.yml
-        if: always()
-        run: |
-          # Restore original file (don't commit the modified version)
-          if [ -f databricks.yml.bak ]; then
-            mv databricks.yml.bak databricks.yml
-            echo "♻️  Restored original databricks.yml"
-          fi
+          echo "✅ Bundle validated successfully"
 
       - name: YAML syntax check
         run: |
