@@ -74,8 +74,15 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
         run: |
-          # Databricks CLI uses environment variables for authentication
-          echo "Databricks CLI configured for DEV"
+          # Create .databrickscfg for authentication
+          cat > ~/.databrickscfg << EOF
+          [DEFAULT]
+          host = ${{ secrets.DATABRICKS_DEV_HOST }}
+          token = ${{ secrets.DATABRICKS_DEV_TOKEN }}
+          EOF
+
+          chmod 600 ~/.databrickscfg
+          echo "✅ Databricks CLI configured for DEV"
 
       - name: Validate bundle
         env:
@@ -132,7 +139,15 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_STG_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STG_TOKEN }}
         run: |
-          echo "Databricks CLI configured for STG"
+          # Create .databrickscfg for authentication
+          cat > ~/.databrickscfg << EOF
+          [DEFAULT]
+          host = ${{ secrets.DATABRICKS_STG_HOST }}
+          token = ${{ secrets.DATABRICKS_STG_TOKEN }}
+          EOF
+
+          chmod 600 ~/.databrickscfg
+          echo "✅ Databricks CLI configured for STG"
 
       - name: Validate bundle
         env:
@@ -195,7 +210,15 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
         run: |
-          echo "Databricks CLI configured for PROD"
+          # Create .databrickscfg for authentication
+          cat > ~/.databrickscfg << EOF
+          [DEFAULT]
+          host = ${{ secrets.DATABRICKS_PROD_HOST }}
+          token = ${{ secrets.DATABRICKS_PROD_TOKEN }}
+          EOF
+
+          chmod 600 ~/.databrickscfg
+          echo "✅ Databricks CLI configured for PROD"
 
       - name: Validate bundle
         env:
