@@ -285,7 +285,7 @@ logger.info(f"Successfully wrote {features_df.count()} records to {features_tabl
 # Calculate and display feature statistics
 # Table name comes from controlled variable, not user input
 feature_stats = spark.sql(
-    f"""
+    f""" # nosec B608 - table name is validated upstream
     SELECT
         COUNT(*) as total_records,
         AVG(age) as avg_age,
@@ -295,7 +295,7 @@ feature_stats = spark.sql(
         COUNT(DISTINCT country) as num_countries
     FROM {features_table}
 """
-)  # nosec B608
+) 
 
 logger.info("Feature statistics:")
 feature_stats.show()
