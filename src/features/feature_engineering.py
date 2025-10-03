@@ -286,6 +286,7 @@ logger.info(f"Successfully wrote {features_df.count()} records to {features_tabl
 # Table name comes from controlled variable, not user input
 # nosec B608 - table name is validated upstream
 feature_stats = spark.sql(
+    f"""
     SELECT
         COUNT(*) as total_records,
         AVG(age) as avg_age,
@@ -294,8 +295,8 @@ feature_stats = spark.sql(
         COUNT(CASE WHEN high_value_customer = true THEN 1 END) as high_value_customers,
         COUNT(DISTINCT country) as num_countries
     FROM {features_table}
-"""
-) 
+    """
+)
 
 logger.info("Feature statistics:")
 feature_stats.show()
