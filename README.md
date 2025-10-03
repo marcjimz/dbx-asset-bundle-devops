@@ -1,4 +1,4 @@
-# MLOps Production Pipeline - Databricks Asset Bundles
+# DevOps Pipeline - Databricks Asset Bundles
 
 > ⚠️ **DEVELOPMENT STATUS WARNING**
 >
@@ -10,9 +10,8 @@
 > - Deployment testing: ⏳ Pending
 > - Integration tests: ⏳ Not implemented
 >
-> See [CD_DEPLOYMENT_INSTRUCTIONS.md](CD_DEPLOYMENT_INSTRUCTIONS.md) for enabling full deployment.
 
-Production-ready MLOps pipeline using Databricks Asset Bundles with automated CI/CD for DEV, STG, and PROD environments.
+Production-like DevOps pipeline using Databricks Asset Bundles with automated CI/CD for DEV, STG, and PROD environments.
 
 ## Features
 
