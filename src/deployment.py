@@ -35,8 +35,12 @@ dbutils.widgets.text("catalog", "dev_catalog", "Unity Catalog")  # noqa: F821
 dbutils.widgets.text("schema", "ml_models", "Schema Name")  # noqa: F821
 dbutils.widgets.text("environment", "dev", "Environment")  # noqa: F821
 dbutils.widgets.text("model_name", "mlops_model_dev", "Model Name")  # noqa: F821
-dbutils.widgets.text("model_version", "latest", "Model Version (or 'latest')")  # noqa: F821
-dbutils.widgets.text("endpoint_name", "", "Serving Endpoint Name (optional)")  # noqa: F821
+dbutils.widgets.text(
+    "model_version", "latest", "Model Version (or 'latest')"
+)  # noqa: F821
+dbutils.widgets.text(
+    "endpoint_name", "", "Serving Endpoint Name (optional)"
+)  # noqa: F821
 
 catalog = dbutils.widgets.get("catalog")  # noqa: F821
 schema = dbutils.widgets.get("schema")  # noqa: F821
@@ -250,7 +254,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                 if endpoint_status.state.ready == "READY":
                     logger.info(f"Endpoint {endpoint_name} is ready!")
                     workspace_url = spark.conf.get(  # noqa: F821
-                        'spark.databricks.workspaceUrl'
+                        "spark.databricks.workspaceUrl"
                     )
                     return {
                         "name": endpoint_name,
@@ -270,9 +274,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                 elapsed_time += wait_interval
 
         logger.warning(f"Endpoint not ready after {max_wait_time} seconds")
-        workspace_url = spark.conf.get(  # noqa: F821
-            'spark.databricks.workspaceUrl'
-        )
+        workspace_url = spark.conf.get("spark.databricks.workspaceUrl")  # noqa: F821
         return {
             "name": endpoint_name,
             "state": "PENDING",
