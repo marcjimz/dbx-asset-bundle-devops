@@ -185,18 +185,14 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
     elif environment.lower() == "stg":
         workload_size = "Small"
         scale_to_zero_enabled = True
-        min_instances = 1
-        max_instances = 3
     else:  # dev
         workload_size = "Small"
         scale_to_zero_enabled = True
-        min_instances = 0
-        max_instances = 1
 
     try:
         # Check if endpoint exists
         try:
-            existing_endpoint = workspace_client.serving_endpoints.get(endpoint_name)
+            workspace_client.serving_endpoints.get(endpoint_name)
             endpoint_exists = True
             logger.info(f"Endpoint {endpoint_name} exists, will update")
         except Exception:
@@ -228,7 +224,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                 ),
             )
 
-            logger.info(f"Endpoint update initiated")
+            logger.info("Endpoint update initiated")
 
         else:
             # Create new endpoint
@@ -239,7 +235,7 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                 config=EndpointCoreConfigInput(served_entities=[served_entity]),
             )
 
-            logger.info(f"Endpoint creation initiated")
+            logger.info("Endpoint creation initiated")
 
         # Wait for endpoint to be ready
         logger.info("Waiting for endpoint to be ready...")
@@ -253,10 +249,13 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
 
                 if endpoint_status.state.ready == "READY":
                     logger.info(f"Endpoint {endpoint_name} is ready!")
+                    workspace_url = spark.conf.get(  # noqa: F821
+                        'spark.databricks.workspaceUrl'
+                    )
                     return {
                         "name": endpoint_name,
                         "state": endpoint_status.state.ready,
-                        "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}",
+                        "url": f"https://{workspace_url}/ml/endpoints/{endpoint_name}",
                     }
 
                 logger.info(
@@ -271,10 +270,13 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
                 elapsed_time += wait_interval
 
         logger.warning(f"Endpoint not ready after {max_wait_time} seconds")
+        workspace_url = spark.conf.get(  # noqa: F821
+            'spark.databricks.workspaceUrl'
+        )
         return {
             "name": endpoint_name,
             "state": "PENDING",
-            "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}",
+            "url": f"https://{workspace_url}/ml/endpoints/{endpoint_name}",
         }
 
     except Exception as e:
@@ -336,7 +338,7 @@ def test_endpoint(endpoint_name):
             name=endpoint_name, dataframe_records=test_data["dataframe_records"]
         )
 
-        logger.info(f"Test prediction successful")
+        logger.info("Test prediction successful")
         return {"status": "success", "response": response}
 
     except Exception as e:
@@ -434,7 +436,7 @@ print("=" * 80)
 # COMMAND ----------
 
 # Output for job orchestration
-dbutils.notebook.exit(
+dbutils.notebook.exit(  # noqa: F821
     {
         "status": "success",
         "endpoint_name": endpoint_name,
