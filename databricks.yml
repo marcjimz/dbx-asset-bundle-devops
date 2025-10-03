@@ -9,6 +9,12 @@ variables:
   git_origin_url:
     description: "Git repository URL for production traceability"
     default: "https://github.com/your-org/dbx-asset-bundle-devops.git"
+
+  # Resource scoping variables
+  resource_prefix:
+    description: "Prefix for resource names (user-scoped for dev, global for prod)"
+    default: "${workspace.current_user.short_name}"
+
   catalog:
     description: "Unity Catalog name for model storage"
   schema:
@@ -18,7 +24,8 @@ variables:
     default: "mlops_model"
   experiment_path:
     description: "MLflow experiment path"
-    default: "/Shared/mlops-experiments"
+    default: "/Shared/mlops-experiments/${workspace.current_user.short_name}"
+
   cluster_spark_version:
     description: "Databricks Runtime version"
     default: "14.3.x-scala2.12"
@@ -33,10 +40,9 @@ variables:
     default: 4
 
 workspace:
-  # Use git source for production deployments (best practice)
-  # Development uses /Workspace/Users/${workspace.current_user.userName}
-  # Production uses /Workspace/.bundles/${bundle.name}/${bundle.target}
-  root_path: ~/.bundle/${bundle.name}/${bundle.target}
+  # Default to user-scoped development path
+  # This will be overridden per target for staging/production
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
 
 targets:
   dev:
@@ -45,13 +51,16 @@ targets:
     # workspace.host uses DATABRICKS_HOST environment variable
     # Set via: export DATABRICKS_HOST=https://adb-example.cloud.databricks.com
     workspace:
-      # Development: Use user folder for individual work
-      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundles/${bundle.name}/${bundle.target}
+      # Development: User-scoped folder for isolated personal development
+      # Each developer gets their own isolated workspace
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
+      # User-scoped resource naming for development
+      resource_prefix: "${workspace.current_user.short_name}"
       catalog: dev_catalog
       schema: ml_models
-      model_name: mlops_model_dev
-      experiment_path: "/Shared/mlops-experiments/dev"
+      model_name: "mlops_model_${workspace.current_user.short_name}"
+      experiment_path: "/Users/${workspace.current_user.userName}/mlops-experiments"
       min_workers: 1
       max_workers: 2
 
@@ -59,13 +68,16 @@ targets:
     mode: development
     # workspace.host uses DATABRICKS_HOST environment variable
     workspace:
-      # Staging: Shared folder for team testing
-      root_path: /Workspace/.bundles/${bundle.name}/${bundle.target}
+      # Staging: Shared workspace folder for team integration testing
+      # No user-scoping - all team members deploy to same location
+      root_path: /Workspace/.bundle/${bundle.name}/${bundle.target}
     variables:
+      # Global resource naming for staging (no user context)
+      resource_prefix: "stg"
       catalog: stg_catalog
       schema: ml_models
-      model_name: mlops_model_stg
-      experiment_path: "/Shared/mlops-experiments/stg"
+      model_name: "mlops_model_stg"
+      experiment_path: "/Shared/mlops-experiments/staging"
       min_workers: 1
       max_workers: 3
 
@@ -73,17 +85,20 @@ targets:
     mode: production
     # workspace.host uses DATABRICKS_HOST environment variable
     workspace:
-      # Production: Dedicated production folder (read-only for most users)
-      root_path: /Workspace/.bundles/${bundle.name}/${bundle.target}
+      # Production: Global workspace folder (read-only for most users)
+      # Service principals and admins only
+      root_path: /Workspace/Production/.bundle/${bundle.name}
     git:
-      # Production uses git source control for traceability
+      # Production uses git source control for traceability and rollback
       branch: main
       origin_url: ${var.git_origin_url}
     variables:
+      # Production-scoped global naming (no user context)
+      resource_prefix: "prod"
       catalog: prod_catalog
       schema: ml_models
-      model_name: mlops_model_prod
-      experiment_path: "/Shared/mlops-experiments/prod"
+      model_name: "mlops_model_prod"
+      experiment_path: "/Shared/mlops-experiments/production"
       min_workers: 2
       max_workers: 4
 
@@ -91,7 +106,7 @@ resources:
   jobs:
     # Feature Engineering Job
     feature_engineering_job:
-      name: ${bundle.target}_feature_engineering
+      name: ${var.resource_prefix}_feature_engineering
       schedule:
         quartz_cron_expression: "0 0 2 * * ?"
         timezone_id: "UTC"
@@ -118,7 +133,7 @@ resources:
 
     # Model Training Job
     training_job:
-      name: ${bundle.target}_model_training
+      name: ${var.resource_prefix}_model_training
       max_concurrent_runs: 1
       timeout_seconds: 10800
       tasks:
@@ -143,7 +158,7 @@ resources:
 
     # Model Evaluation and Selection Job
     evaluation_job:
-      name: ${bundle.target}_model_evaluation
+      name: ${var.resource_prefix}_model_evaluation
       max_concurrent_runs: 1
       timeout_seconds: 3600
       tasks:
@@ -164,7 +179,7 @@ resources:
 
     # Model Deployment Job
     deployment_job:
-      name: ${bundle.target}_model_deployment
+      name: ${var.resource_prefix}_model_deployment
       max_concurrent_runs: 1
       timeout_seconds: 3600
       tasks:
@@ -185,7 +200,7 @@ resources:
 
     # End-to-End Pipeline Job
     full_pipeline_job:
-      name: ${bundle.target}_full_mlops_pipeline
+      name: ${var.resource_prefix}_full_mlops_pipeline
       max_concurrent_runs: 1
       timeout_seconds: 14400
       email_notifications:
