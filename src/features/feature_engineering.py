@@ -136,6 +136,8 @@ def engineer_features(df: DataFrame) -> DataFrame:
     """
     Apply feature engineering transformations.
 
+    This function performs feature_engineering on the input DataFrame.
+
     Args:
         df: Input DataFrame with raw features
 

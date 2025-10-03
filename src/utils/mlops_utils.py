@@ -28,6 +28,7 @@ def setup_logging(name: str, level: int = logging.INFO) -> logging.Logger:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     logger = logging.getLogger(name)
+    logger.setLevel(level)
     return logger
 
 
@@ -64,12 +65,21 @@ def format_metrics(metrics: Dict[str, float], precision: int = 4) -> Dict[str, s
     Returns:
         Dictionary of formatted metric strings
     """
-    return {
-        name: (
-            f"{value:.{precision}f}" if isinstance(value, (int, float)) else str(value)
-        )
-        for name, value in metrics.items()
-    }
+    formatted = {}
+    for name, value in metrics.items():
+        if isinstance(value, bool):
+            # Handle boolean values
+            formatted[name] = str(value)
+        elif isinstance(value, int):
+            # Format integers without decimal places
+            formatted[name] = str(value)
+        elif isinstance(value, float):
+            # Format floats with precision
+            formatted[name] = f"{value:.{precision}f}"
+        else:
+            # Handle other types as strings
+            formatted[name] = str(value)
+    return formatted
 
 
 def create_run_summary(
