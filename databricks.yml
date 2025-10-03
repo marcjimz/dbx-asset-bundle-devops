@@ -65,11 +65,12 @@ targets:
       max_workers: 2
 
   stg:
-    mode: development
+    mode: production
     # workspace.host uses DATABRICKS_HOST environment variable
     workspace:
       # Staging: Shared workspace folder for team integration testing
       # No user-scoping - all team members deploy to same location
+      # Uses 'production' mode to allow shared path
       root_path: /Workspace/.bundle/${bundle.name}/${bundle.target}
     variables:
       # Global resource naming for staging (no user context)
