@@ -6,8 +6,39 @@ on:
   push:
     branches: [ main, develop, feature/* ]
 
+# ============================================================================
+# INVOKE COMPLETE PIPELINE TEMPLATE
+# ============================================================================
+# Instead of defining jobs here, you can call a complete pipeline template
+# that contains all the jobs (security, testing, validation, etc.)
+#
+# The devops-templates repo would have a file like:
+# devops-templates/.github/workflows/python-ci-pipeline.yml
+#
+# That template contains ALL the jobs and you just invoke it once:
+# ============================================================================
+
 jobs:
-  # Security vulnerability scanning with Bandit
+  # Option 1: Call complete pipeline template (SIMPLEST)
+  # ============================================================================
+  # invoke-pipeline:
+  #   uses: your-org/devops-templates/.github/workflows/python-ci-pipeline.yml@main
+  #   with:
+  #     python-version: '3.10'
+  #     source-path: 'src/'
+  #     test-path: 'tests/'
+  #     requirements-file: 'requirements.txt'
+  #     max-line-length: 100
+  #     coverage-threshold: 80
+  #     databricks-config: 'databricks.yml'
+  # ============================================================================
+
+  # Option 2: Import individual job templates (MORE GRANULAR CONTROL)
+  # ============================================================================
+  # This is what's shown below - you import each job template separately
+  # Use this when you need to customize individual jobs or their dependencies
+  # ============================================================================
+
   security-scan:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
@@ -48,7 +79,6 @@ jobs:
           name: bandit-security-report
           path: bandit-report.json
 
-  # Secret scanning with multiple tools
   secret-scan:
     name: Secret & Credential Scan
     runs-on: ubuntu-latest
@@ -90,7 +120,6 @@ jobs:
           name: secrets-baseline
           path: .secrets.baseline
 
-  # Code quality and linting
   code-quality:
     name: Code Quality & Linting
     runs-on: ubuntu-latest
@@ -120,7 +149,6 @@ jobs:
         run: |
           pylint src/ --disable=C0114,C0115,C0116 || true
 
-  # Unit tests with coverage
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -140,7 +168,8 @@ jobs:
 
       - name: Run unit tests with coverage
         run: |
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term
+          # change coverage threshold to 80% in production
+          pytest tests/ -v--cov-fail-under=10 --cov=src --cov-report=xml --cov-report=html --cov-report=term
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -156,7 +185,6 @@ jobs:
         run: |
           echo "Coverage report generated. Check artifacts for detailed report."
 
-  # Databricks bundle validation
   bundle-validation:
     name: Validate Databricks Bundle
     runs-on: ubuntu-latest
@@ -178,7 +206,6 @@ jobs:
           pip install pyyaml
           python -c "import yaml; yaml.safe_load(open('databricks.yml'))" && echo "YAML syntax valid"
 
-  # Build summary
   ci-summary:
     name: CI Pipeline Summary
     runs-on: ubuntu-latest
