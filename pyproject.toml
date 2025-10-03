@@ -2,6 +2,9 @@
 exclude_dirs = ["/tests"]
 skips = ["B608"]
 
+[tool.flake8]
+builtins = ["dbutils", "spark", "sc", "sqlContext"]
+
 [tool.pytest.ini_options]
 # Pytest configuration for MLOps pipeline tests
 
