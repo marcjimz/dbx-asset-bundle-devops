@@ -114,7 +114,7 @@ def get_best_run(experiment_id, metric_name, min_metric_value):
         logger.warning(
             f"No runs meet minimum {metric_name} threshold of {min_metric_value}"
         )
-        logger.warning(f"Using best available run")
+        logger.warning("Using best available run")
         valid_runs = runs
 
     # Get best run
