@@ -286,7 +286,8 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
         return {
             "name": endpoint_name,
             "state": "CONFIGURED",
-            "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/ml/endpoints/{endpoint_name}",
+            "url": f"https://{spark.conf.get('spark.databricks.workspaceUrl')} \
+                /ml/endpoints/{endpoint_name}",
             "note": "Endpoint configuration submitted. Check Databricks console for status.",
         }
 
