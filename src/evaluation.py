@@ -164,7 +164,7 @@ def compare_top_models(experiment_id, top_n=5):
     comparison_data = []
     for run in runs:
         metrics = run.data.metrics
-        params = run.data.params
+        run.data.params
 
         comparison_data.append(
             {

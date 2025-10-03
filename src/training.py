@@ -13,7 +13,6 @@ import mlflow
 import mlflow.sklearn
 from mlflow.models import infer_signature
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import (
@@ -25,8 +24,6 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report,
 )
-import pandas as pd
-import numpy as np
 from datetime import datetime
 import json
 import tempfile

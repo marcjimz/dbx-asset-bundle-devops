@@ -4,7 +4,6 @@ Unit tests for MLOps utility functions
 
 import pytest
 import json
-import os
 from src.utils.mlops_utils import (
     setup_logging,
     validate_parameters,

@@ -240,13 +240,11 @@ class TestIntegrationPlaceholders:
     def test_end_to_end_pipeline(self):
         """Test complete pipeline execution"""
         # This would test actual pipeline execution in Databricks
-        pass
 
     @pytest.mark.skip(reason="Requires Databricks connection")
     def test_model_deployment_to_staging(self):
         """Test model deployment to staging"""
         # This would test actual deployment
-        pass
 
 
 # Smoke test markers
@@ -258,8 +256,6 @@ class TestSmokeTests:
         """Test that basic imports work"""
         try:
             import pytest
-            import json
-            import os
 
             assert True
         except ImportError:

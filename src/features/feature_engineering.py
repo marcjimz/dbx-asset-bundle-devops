@@ -13,14 +13,10 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import (
     col,
     count,
-    mean,
-    stddev,
     min as spark_min,
     max as spark_max,
     when,
-    lit,
     current_timestamp,
-    expr,
 )
 from pyspark.sql.types import (
     StructType,

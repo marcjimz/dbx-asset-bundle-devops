@@ -184,8 +184,6 @@ def create_or_update_endpoint(endpoint_name, model_name, model_version, environm
     if environment.lower() == "prod":
         workload_size = "Medium"
         scale_to_zero_enabled = False
-        min_instances = 1
-        max_instances = 5
     elif environment.lower() == "stg":
         workload_size = "Small"
         scale_to_zero_enabled = True
