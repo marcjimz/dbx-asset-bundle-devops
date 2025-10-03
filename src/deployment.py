@@ -31,19 +31,19 @@ logger = logging.getLogger(__name__)
 # COMMAND ----------
 
 # Get parameters
-dbutils.widgets.text("catalog", "dev_catalog", "Unity Catalog")
-dbutils.widgets.text("schema", "ml_models", "Schema Name")
-dbutils.widgets.text("environment", "dev", "Environment")
-dbutils.widgets.text("model_name", "mlops_model_dev", "Model Name")
-dbutils.widgets.text("model_version", "latest", "Model Version (or 'latest')")
-dbutils.widgets.text("endpoint_name", "", "Serving Endpoint Name (optional)")
+dbutils.widgets.text("catalog", "dev_catalog", "Unity Catalog")  # noqa: F821
+dbutils.widgets.text("schema", "ml_models", "Schema Name")  # noqa: F821
+dbutils.widgets.text("environment", "dev", "Environment")  # noqa: F821
+dbutils.widgets.text("model_name", "mlops_model_dev", "Model Name")  # noqa: F821
+dbutils.widgets.text("model_version", "latest", "Model Version (or 'latest')")  # noqa: F821
+dbutils.widgets.text("endpoint_name", "", "Serving Endpoint Name (optional)")  # noqa: F821
 
-catalog = dbutils.widgets.get("catalog")
-schema = dbutils.widgets.get("schema")
-environment = dbutils.widgets.get("environment")
-model_name = dbutils.widgets.get("model_name")
-model_version_param = dbutils.widgets.get("model_version")
-endpoint_name_param = dbutils.widgets.get("endpoint_name")
+catalog = dbutils.widgets.get("catalog")  # noqa: F821
+schema = dbutils.widgets.get("schema")  # noqa: F821
+environment = dbutils.widgets.get("environment")  # noqa: F821
+model_name = dbutils.widgets.get("model_name")  # noqa: F821
+model_version_param = dbutils.widgets.get("model_version")  # noqa: F821
+endpoint_name_param = dbutils.widgets.get("endpoint_name")  # noqa: F821
 
 # Construct full model name
 full_model_name = f"{catalog}.{schema}.{model_name}"
@@ -96,7 +96,7 @@ def get_model_version_to_deploy(model_name, version_param, environment):
     Returns:
         version_number: Model version number to deploy
     """
-    logger.info(f"Determining model version to deploy...")
+    logger.info("Determining model version to deploy...")
 
     try:
         if version_param.lower() == "latest":

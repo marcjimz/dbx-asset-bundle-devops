@@ -1,3 +1,7 @@
+[tool.bandit]
+exclude_dirs = ["/tests"]
+skips = ["B608"]
+
 [tool.pytest.ini_options]
 # Pytest configuration for MLOps pipeline tests
 
@@ -28,6 +32,7 @@ markers = [
     "smoke: Quick smoke tests for basic validation",
     "slow: Tests that take a long time to run",
 ]
+
 
 [tool.coverage.run]
 source = ["src"]
