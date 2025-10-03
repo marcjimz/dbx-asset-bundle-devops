@@ -1,11 +1,17 @@
 # Databricks Asset Bundle - MLOps Production Pipeline
 bundle:
-  name: mlops-production-pipeline
+  name: mlops-production-pipeline${var.branch_suffix}
 
 include:
   - resources/*.yml
 
 variables:
+  branch_suffix:
+    description: "Branch-based suffix for bundle isolation (e.g., -feature-auth)"
+    default: ""
+  workspace_host:
+    description: "Databricks workspace URL"
+    default: "https://adb-example.cloud.databricks.com"
   catalog:
     description: "Unity Catalog name for model storage"
   schema:
@@ -37,7 +43,7 @@ targets:
     mode: development
     default: true
     workspace:
-      host: https://adb-example.cloud.databricks.com
+      host: ${var.workspace_host}
     variables:
       catalog: dev_catalog
       schema: ml_models
@@ -49,7 +55,7 @@ targets:
   stg:
     mode: development
     workspace:
-      host: https://adb-example.cloud.databricks.com
+      host: ${var.workspace_host}
     variables:
       catalog: stg_catalog
       schema: ml_models
@@ -61,7 +67,7 @@ targets:
   prod:
     mode: production
     workspace:
-      host: https://adb-example.cloud.databricks.com
+      host: ${var.workspace_host}
     variables:
       catalog: prod_catalog
       schema: ml_models

@@ -189,6 +189,9 @@ jobs:
     name: Validate Databricks Bundle
     runs-on: ubuntu-latest
     needs: unit-tests
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -197,9 +200,30 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
-      - name: Validate bundle syntax
+      - name: Prepare branch name for bundle
+        id: branch
         run: |
-          databricks bundle validate || echo "Bundle validation requires authentication"
+          # Get branch name and sanitize it for Databricks
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          # Convert to lowercase, replace special chars with hyphens, limit length
+          SANITIZED=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | cut -c1-30)
+
+          # Only add suffix for feature branches (not main/develop)
+          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "develop" ]]; then
+            echo "branch_suffix=" >> $GITHUB_OUTPUT
+          else
+            echo "branch_suffix=-${SANITIZED}" >> $GITHUB_OUTPUT
+          fi
+          echo "Branch suffix: -${SANITIZED}"
+
+      - name: Validate bundle with authentication
+        run: |
+          # Set branch suffix as environment variable for bundle
+          export TF_VAR_branch_suffix="${{ steps.branch.outputs.branch_suffix }}"
+          export TF_VAR_workspace_host="${DATABRICKS_HOST}"
+
+          # Validate bundle for dev target
+          databricks bundle validate --target dev
 
       - name: YAML syntax check
         run: |
