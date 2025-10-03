@@ -217,9 +217,8 @@ def train_model(X, y, feature_names):
     # Feature importance
     feature_importance = dict(zip(feature_names, model.feature_importances_))
     logger.info(
-        f"Top 5 important features: {sorted(
-            feature_importance.items(), key=lambda x: x[1],
-            reverse=True)[:5]}"
+        f"Top 5 important features: "
+        f"{sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)[:5]}"
     )
 
     return (
