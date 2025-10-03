@@ -90,24 +90,46 @@ jobs:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
         run: |
           databricks bundle validate -t dev
+          echo "✅ Bundle validation successful"
 
-      - name: Deploy to DEV
+      # ============================================================================
+      # AUTHENTICATION TEST ONLY - DEPLOYMENT DISABLED
+      # ============================================================================
+      # TODO: Once bundle is fully tested, uncomment the deployment steps below
+      # For now, we only authenticate and validate to ensure credentials work
+      # ============================================================================
+      - name: Test DEV Authentication (Deploy Disabled)
         id: deploy
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
         run: |
-          databricks bundle deploy -t dev
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "🔐 Testing authentication to DEV workspace..."
+          databricks workspace list /Workspace --output json > /dev/null
+          echo "✅ Authentication successful - credentials are valid"
+          echo "⚠️  DEPLOYMENT SKIPPED - Bundle not yet tested"
+          echo "📝 To enable deployment, uncomment the 'databricks bundle deploy' command"
+          echo "status=auth-only" >> $GITHUB_OUTPUT
 
-      - name: Run training job
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
-        run: |
-          echo "Triggering training job in DEV..."
-          databricks bundle run training_job -t dev --no-wait
-          echo "Training job started in DEV environment"
+      # DISABLED: Uncomment when ready to deploy
+      # - name: Deploy to DEV
+      #   id: deploy
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
+      #   run: |
+      #     databricks bundle deploy -t dev
+      #     echo "status=success" >> $GITHUB_OUTPUT
+
+      # DISABLED: Uncomment when ready to run jobs
+      # - name: Run training job
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEV_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
+      #   run: |
+      #     echo "Triggering training job in DEV..."
+      #     databricks bundle run training_job -t dev --no-wait
+      #     echo "Training job started in DEV environment"
 
   # Deploy to STG environment
   deploy-stg:
@@ -155,30 +177,53 @@ jobs:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STG_TOKEN }}
         run: |
           databricks bundle validate -t stg
+          echo "✅ Bundle validation successful"
 
-      - name: Deploy to STG
+      # ============================================================================
+      # AUTHENTICATION TEST ONLY - DEPLOYMENT DISABLED
+      # ============================================================================
+      # TODO: Once bundle is fully tested, uncomment the deployment steps below
+      # For now, we only authenticate and validate to ensure credentials work
+      # ============================================================================
+      - name: Test STG Authentication (Deploy Disabled)
         id: deploy
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_STG_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STG_TOKEN }}
         run: |
-          databricks bundle deploy -t stg
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "🔐 Testing authentication to STG workspace..."
+          databricks workspace list /Workspace --output json > /dev/null
+          echo "✅ Authentication successful - credentials are valid"
+          echo "⚠️  DEPLOYMENT SKIPPED - Bundle not yet tested"
+          echo "📝 To enable deployment, uncomment the 'databricks bundle deploy' command"
+          echo "status=auth-only" >> $GITHUB_OUTPUT
 
-      - name: Run integration tests
-        run: |
-          echo "Running integration tests in STG..."
-          pytest tests/integration/ -v --tb=short || true
-          echo "Integration tests completed"
+      # DISABLED: Uncomment when ready to deploy
+      # - name: Deploy to STG
+      #   id: deploy
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_STG_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STG_TOKEN }}
+      #   run: |
+      #     databricks bundle deploy -t stg
+      #     echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: Run full pipeline
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_STG_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STG_TOKEN }}
-        run: |
-          echo "Triggering full MLOps pipeline in STG..."
-          databricks bundle run full_pipeline_job -t stg --no-wait
-          echo "Full pipeline started in STG environment"
+      # DISABLED: Uncomment when ready to run tests
+      # - name: Run integration tests
+      #   run: |
+      #     echo "Running integration tests in STG..."
+      #     pytest tests/integration/ -v --tb=short || true
+      #     echo "Integration tests completed"
+
+      # DISABLED: Uncomment when ready to run pipeline
+      # - name: Run full pipeline
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_STG_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STG_TOKEN }}
+      #   run: |
+      #     echo "Triggering full MLOps pipeline in STG..."
+      #     databricks bundle run full_pipeline_job -t stg --no-wait
+      #     echo "Full pipeline started in STG environment"
 
   # Deploy to PROD environment
   deploy-prod:
@@ -226,21 +271,43 @@ jobs:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
         run: |
           databricks bundle validate -t prod
+          echo "✅ Bundle validation successful"
 
-      - name: Deploy to PROD
+      # ============================================================================
+      # AUTHENTICATION TEST ONLY - DEPLOYMENT DISABLED
+      # ============================================================================
+      # TODO: Once bundle is fully tested, uncomment the deployment steps below
+      # For now, we only authenticate and validate to ensure credentials work
+      # ============================================================================
+      - name: Test PROD Authentication (Deploy Disabled)
         id: deploy
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
         run: |
-          databricks bundle deploy -t prod
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "🔐 Testing authentication to PROD workspace..."
+          databricks workspace list /Workspace --output json > /dev/null
+          echo "✅ Authentication successful - credentials are valid"
+          echo "⚠️  DEPLOYMENT SKIPPED - Bundle not yet tested"
+          echo "📝 To enable deployment, uncomment the 'databricks bundle deploy' command"
+          echo "status=auth-only" >> $GITHUB_OUTPUT
 
-      - name: Run smoke tests
-        run: |
-          echo "Running smoke tests in PROD..."
-          pytest tests/integration/ -v -m smoke --tb=short || true
-          echo "Smoke tests completed"
+      # DISABLED: Uncomment when ready to deploy
+      # - name: Deploy to PROD
+      #   id: deploy
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
+      #   run: |
+      #     databricks bundle deploy -t prod
+      #     echo "status=success" >> $GITHUB_OUTPUT
+
+      # DISABLED: Uncomment when ready to run smoke tests
+      # - name: Run smoke tests
+      #   run: |
+      #     echo "Running smoke tests in PROD..."
+      #     pytest tests/integration/ -v -m smoke --tb=short || true
+      #     echo "Smoke tests completed"
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
